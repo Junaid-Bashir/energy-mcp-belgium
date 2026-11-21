@@ -38,7 +38,7 @@ Both endpoints must be explicit-offset ISO 8601, quarter-hour aligned, historica
 python examples/run_public_demo.py --start 2026-11-17T12:00:00Z --end 2026-11-17T13:00:00Z
 ```
 
-This command also requires ENERGY_MCP_LIVE=1. On 19 November 2026 the window returned four solar records, 60 system-imbalance records, four price records, **2191.975 MWh** of observed solar energy and a complete four-interval load series. Provider revisions or publication problems can change a later result.
+This command also requires ENERGY_MCP_LIVE=1. A complete one-hour window contains four quarter-hour records per series or 60 minute-level imbalance records. Energy and completeness depend on the returned values; provider revisions and publication gaps can change the result.
 
 Run just one scenario with `--scenario solar`, `imbalance`, `prices`, `energy` or `quality`. For example:
 
@@ -48,7 +48,7 @@ python examples/run_public_demo.py --scenario energy --start 2026-11-17T12:00:00
 
 ## Screenshot-friendly output
 
-Illustrative excerpt from the dated verification (not a promise of current values):
+Reference output for 17 November 2026, 12:00–13:00 UTC, using data retrieved on 19 November 2026. Values can be revised:
 
 ```text
 Energy MCP Belgium | LIVE public demo
@@ -68,7 +68,7 @@ Read-only Elia access | sequential calls | no LLM API key
 
 Terminal output does not dump raw time-series records. Source MW is distinct from the energy_mwh result; prices retain EUR/MWh. There is no certification, sponsorship or endorsement implied by a successful demo.
 
-## Optional machine-readable evidence
+## Save a compact result summary
 
 ```sh
 python examples/run_public_demo.py --output artifacts/public-demo/validation-summary.json

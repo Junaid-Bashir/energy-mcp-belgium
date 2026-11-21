@@ -18,7 +18,7 @@ python -m build
 python examples/verify_distribution.py
 ```
 
-CI is configured for Linux and Windows, Python 3.11–3.14. Local validation was performed on Windows Python 3.12; a configured matrix is not a claim that remote jobs have already passed. Build and installation may contact package indexes. Offline tests require neither Elia nor an external model/client application.
+CI runs on Linux and Windows with Python 3.11–3.14. Build and installation may contact package indexes. Offline tests require neither Elia nor an external model/client application.
 
 ## Tests and live checks
 

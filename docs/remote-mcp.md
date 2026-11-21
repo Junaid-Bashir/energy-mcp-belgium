@@ -1,6 +1,6 @@
-# Experimental Streamable HTTP transport
+# Streamable HTTP deployment
 
-A Cloudflare Python Worker exposes the same eight-tool Python registry over MCP Streamable HTTP. See [architecture](architecture.md), [validation methodology](validation.md) and the [hosted security and operations policy](remote-security.md). The hosted service is experimental and subject to an unresolved CPU capacity gate.
+A Cloudflare Python Worker exposes the same eight-tool Python registry over MCP Streamable HTTP. See [architecture](architecture.md), [validation methodology](validation.md) and the [hosted security and operations policy](remote-security.md). For runtime capacity and availability guidance, see [service availability](remote-security.md#service-availability).
 
 ## Two entry points, one core
 
@@ -66,13 +66,13 @@ One explicitly bounded manual live call:
 npx --yes @modelcontextprotocol/inspector@2.16.0 --cli http://127.0.0.1:8797/mcp --transport http --method tools/call --tool-name get_solar_generation --tool-arg start=2026-11-18T12:00:00Z end=2026-11-18T12:15:00Z --format json
 ```
 
-The observed local workerd response had source Elia, dataset ods209, one record, zero missing values, MW units and UTC timestamps. It is historical data and may be revised. Both existing resources (`energy://belgium/datasets`, `energy://belgium/methodology`) were also read through HTTP. Raw tool output should stay local.
+For the quarter-hour solar query, check for Elia source ods209, MW units, UTC timestamps and at most one record. Historical values may be revised or absent. The two static resources, `energy://belgium/datasets` and `energy://belgium/methodology`, are also available through HTTP.
 
 ## Worker lifecycle and configuration
 
-`entry.py:Default.fetch()` reads explicit allowlists, constructs a fresh app inside the request, and delegates to the official Workers ASGI bridge. Do not move `create_server()` or `create_http_app()` to Worker module startup: MCP 2.3.0 creates ephemeral random security material, which Workers forbids at startup. The bridge owns request-scoped ASGI startup/shutdown, HTTPX cleanup and SDK task-group shutdown.
+`entry.py:Default.fetch()` reads explicit allowlists, constructs a fresh app inside the request, and delegates to the official Workers ASGI bridge. Do not move `create_server()` or `create_http_app()` to Worker module startup: MCP 2.3.0 creates ephemeral random security material, which Workers forbids at startup. The bridge owns request-scoped ASGI startup/shutdown, HTTPX cleanup and asynchronous request cleanup.
 
-CPython uvicorn uses its normal process lifespan. In legacy stateless compatibility mode, a cancelled call's provider task can be cleaned up at lifespan shutdown; the Worker lifespan is request-scoped. The automated cancellation test verifies provider cancellation and closure on shutdown, rather than claiming immediate cross-request legacy cancellation. Modern protocol cancellation uses the SDK. No application jobs are intentionally retained after a Worker response.
+CPython uvicorn uses its normal process lifespan. In legacy stateless compatibility mode, a cancelled call's provider operation can be cleaned up at lifespan shutdown; the Worker lifespan is request-scoped. Legacy cancellation may therefore complete at shutdown rather than immediately across requests. Modern protocol cancellation uses the SDK. No application jobs are intentionally retained after a Worker response.
 
 Bindings:
 
@@ -83,11 +83,11 @@ Bindings:
 
 Missing/invalid Worker allowlists fail closed with a generic 503 configuration error. A missing Origin from a server-to-server MCP client is accepted if Host is allowed; an invalid Origin returns 403, an invalid Host 421. SDK checks cover both `/mcp` and health. Wildcard CORS is not enabled. Merely allowing an Origin does not add CORS response headers: current Inspector/OpenAI backend clients do not require a browser application API. Add narrowly scoped CORS only if a later browser client actually needs it.
 
-Do not derive the public allowlist from an untrusted incoming Host header. Configure the actual approved workers.dev hostname at deployment, enable only the intended test route and validate Host forwarding and the real clients. No account ID, account hostname, token or developer filesystem path is hard-coded in the deployment files. The deployed endpoint is `https://energy-mcp-belgium.junaidbashir392.workers.dev/mcp`; it remains experimental and subject to the CPU capacity gate in the security policy.
+Do not derive the public allowlist from an untrusted incoming Host header. Configure the actual approved workers.dev hostname at deployment, enable only the intended test route and validate Host forwarding and the real clients. No account ID, account hostname, token or developer filesystem path is hard-coded in the deployment files. The deployed endpoint is `https://energy-mcp-belgium.junaidbashir392.workers.dev/mcp`; it is a best-effort demo with the [service limits](remote-security.md#service-availability) described in the security policy.
 
 ## Security and logging
 
-The eight tools retain their original read-only annotations, fixed Elia GET endpoint, six dataset allowlist, no redirects, aware timestamps, UTC quarter-hour bounds, start < end, 24-hour maximum, enums and row/retry caps. HTTP adds no arbitrary fetch, write, shell, filesystem, database, code-execution or market capability. No application OAuth or storage was added. The named hosted test environment has native ingress and actual-attempt upstream admission, described in the [security policy](remote-security.md).
+The eight tools have read-only annotations, fixed Elia GET endpoint, six dataset allowlist, no redirects, aware timestamps, UTC quarter-hour bounds, start < end, 24-hour maximum, enums and row/retry caps. HTTP adds no arbitrary fetch, write, shell, filesystem, database, code-execution or market capability. Application OAuth and persistent storage are not configured. The named hosted test environment has native ingress and actual-attempt upstream admission, described in the [security policy](remote-security.md).
 
 The adapter emits bounded HTTP, MCP and Elia-attempt metadata to stdout: safe method/tool/dataset labels, status/outcome, record counts and duration. It never prints request arguments, bodies, time-series data, headers, cookies, IP keys, exception text or query strings. No HTTP adapter module is imported by the stdio CLI, whose stdout remains exclusively the MCP wire. Verbose SDK/provider/HTTPX diagnostics are suppressed remotely. Application telemetry also covers rejection/cancellation; MCP errors are separate from HTTP success. Invocation logs, persistence and traces remain off.
 
@@ -106,13 +106,13 @@ python -m twine check --strict dist/*
 python examples/verify_distribution.py
 ```
 
-Normal tests use no Elia/Cloudflare/ChatGPT services. Both HTTPX client generations are blocked from real network access in unmarked tests. Transport tests use a real stdio subprocess and the official MCP HTTP client over an in-process ASGI transport. They compare complete tool schemas (including annotations) and all eight representative results. The only intentionally volatile scientific field removed is `metadata.retrieved_at`, recursively including nested quality metadata. Hosted input errors deliberately omit SDK raw-value echoes/dependency details; rejection semantics and known safe provider/domain error codes remain equivalent. Hardening tests also cover page/retry charging, fail-closed admission, proxy prevention and telemetry privacy.
+Normal tests use no Elia/Cloudflare/ChatGPT services. Both HTTPX client generations are blocked from real network access in unmarked tests. Transport tests use a real stdio subprocess and the official MCP HTTP client over an in-process ASGI transport. They compare complete tool schemas (including annotations) and all eight representative results. The only intentionally volatile scientific field removed is `metadata.retrieved_at`, recursively including nested quality metadata. Hosted input errors deliberately omit SDK raw-value echoes/dependency details; rejection semantics and known safe provider/domain error codes remain equivalent. Security tests also cover page/retry charging, fail-closed admission, proxy prevention and telemetry privacy.
 
 Cases include solar, wind, load, mix, physical imbalance, price, energy and quality; 100 MWh arithmetic, gaps/nulls/duplicates; invalid timestamps, naive/numeric times, range reversal, >24 hours, off-grid bounds and wind enums; upstream unavailability/contract failures; both resources; legacy initialize and current stateless requests; JSON/SSE; concurrency; body limits; no redirects; Host/Origin; no-upstream health; sanitized logging; Worker per-request app construction and lifespan cancellation/closure.
 
 The small `typings/workers` stub describes only the bridge surface from workers-runtime-sdk 1.9.6 for strict CPython type checking; it is not a vendored runtime or a fake Worker implementation. Actual Worker behavior is additionally validated in local workerd.
 
-## Distribution and future release
+## Distribution
 
 The wheel remains core-only and retains the existing console/module entry points. Public deployment sources/configuration/locks and typing stubs are intentionally included in source builds so transport tests remain runnable. Vendored `python_modules`, node_modules, Worker state, environments, generated target locks, credentials and local evidence are excluded. The existing production PyPI release remains 0.1.0; repository deployment and documentation updates do not replace its published artifacts.
 
@@ -132,6 +132,6 @@ uv run --locked pywrangler tail --env test --format json
 
 The four native bindings implement 60 MCP requests/minute/client IP, 120 aggregate/minute/location, 20 Elia attempts/10 seconds/location and 120 Elia attempts/minute/location. Every provider page/retry needs admission. These approximate counters are not global quotas. Inspect only sanitized application messages; raw tail envelopes can contain private platform metadata. Logs are not persisted and invocation logging/tracing remain off. See the [exact policy and shutdown/recovery procedures](remote-security.md).
 
-After a deploy, verify health, all eight schemas, a short source query and deterministic analytics. The [validation guide](validation.md#cloudflare-remote-mcp-and-chatgpt) records tested Inspector/ChatGPT scenarios and the remaining CPU blocker. The Free plan's 10 ms CPU allowance is below the measured Python workload; successful requests do not establish capacity or uptime. No custom domain, persistent store or application OAuth is configured.
+After a deploy, verify health, all eight schemas, a short source query and deterministic analytics. Use the [validation methodology](validation.md#remote-client-interoperability) to check Inspector and ChatGPT access. Size the runtime for the Python workload and account for [CPU resource limits](remote-security.md#service-availability). No custom domain, persistent store or application OAuth is configured.
 
-For rollback, select a reviewed known-good version on the Worker dashboard Deployments page, or redeploy its reviewed source/configuration. An older version may lack admission controls. Preserve the same hostname and verify its protection bindings and output parity. A rollback does not resolve the known CPU-capacity issue. To suspend access reversibly, disable the named environment's workers.dev route as described in the security policy; do not delete the service.
+For rollback, select a reviewed known-good version on the Worker dashboard Deployments page, or redeploy its reviewed source/configuration. An older version may lack admission controls. Preserve the same hostname and verify its protection bindings and output parity. A rollback does not increase the runtime CPU allowance. To suspend access reversibly, disable the named environment's workers.dev route as described in the security policy; do not delete the service.

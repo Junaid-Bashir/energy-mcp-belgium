@@ -35,8 +35,8 @@ The server supplies data and calculations. Natural-language selection and narrat
 
 ## Remote runtime design
 
-The Cloudflare Python Worker delegates to the official Workers ASGI bridge and the same Python server factory. Deployment-only imports and tooling stay outside the core wheel. Each fetch constructs its app inside request scope: the SDK generates security material that cannot be created at Worker module startup. ASGI lifespan closes the HTTP client and request tasks.
+The Cloudflare Python Worker delegates to the official Workers ASGI bridge and the same Python server factory. Deployment-only imports and tooling stay outside the core wheel. Each fetch constructs its app inside request scope: the SDK generates security material that cannot be created at Worker module startup. ASGI lifespan closes the HTTP client and cleans up asynchronous request work.
 
 The SDK transport is stateless; it needs no session database or Durable Object. JSON replies are the default, with request-scoped SSE compatibility tested separately. Explicit Host/Origin checks, body limits, native ingress admission and fixed-destination upstream admission add protection without changing tool schemas or scientific calculations. The [security policy](remote-security.md) explains approximate per-location counters and residual distributed-traffic risks.
 
-Reusing Python avoids duplicating source contracts and analytics in another language. A container would add image/runtime orchestration and is not part of this architecture. The current Python Worker exceeds the retained Free-plan CPU allowance, so the hosted endpoint remains experimental; architectural compatibility is not a claim of capacity or uptime.
+Reusing Python avoids duplicating source contracts and analytics in another language. A container would add image/runtime orchestration and is not part of this architecture. The hosted demo has limited runtime capacity and no SLA. See [service availability](remote-security.md#service-availability) for resource-limit errors and deployment sizing.

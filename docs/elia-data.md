@@ -1,6 +1,6 @@
 # Elia source contracts
 
-Verified 2026-11-19 against official metadata endpoints and tiny live records queries. Provider: Elia Transmission Belgium SA, public Explore API v2.1, no API key. Each dataset link provides information and API access. The corresponding machine-readable field selection is in `elia/datasets.py`; synthetic fixtures use those field names. No bulk Elia datasets are redistributed; docs/examples/solar-response.json contains a small attributed four-record live example.
+Provider: Elia Transmission Belgium SA, public Explore API v2.1, no API key. Each dataset link provides information and API access. The corresponding machine-readable field selection is in `elia/datasets.py`; synthetic fixtures use those field names. No bulk Elia datasets are redistributed; docs/examples/solar-response.json contains a small attributed four-record live example.
 
 ## Shared contract
 
@@ -10,7 +10,7 @@ Verified 2026-11-19 against official metadata endpoints and tiny live records qu
 - Historical refresh: daily according to DCAT metadata; exact publication times are not promised. Future forecast-bearing records may have null actuals. Current-day freshness is not guaranteed.
 - All numeric fields remain numbers, not formatted strings. No forecast field is selected.
 - Non-solar records carry `resolutioncode`, checked against expected resolution. Balancing records retain `qualitystatus`.
-- API: `https://opendata.elia.be/api/explore/v2.1/catalog/datasets/{dataset_id}/records`; `where`, deterministic ordering, `limit=100`, offset pagination. Maximum 5000 raw rows. No verified numerical Elia rate quota was found; sequential pages, small pool and bounded retries avoid aggressive access.
+- API: `https://opendata.elia.be/api/explore/v2.1/catalog/datasets/{dataset_id}/records`; `where`, deterministic ordering, `limit=100`, offset pagination. Maximum 5000 raw rows. Requests use sequential pages, a small connection pool and bounded retries; these are client safeguards, not a published Elia quota.
 
 ## Contracts by tool
 
@@ -55,7 +55,7 @@ Minute `systemimbalance` is instantaneous, not quarter-hour average power. Posit
 
 ### Price caveats
 
-`imbalanceprice` is the BRP settlement tariff; marginal incremental/decremental prices describe upward/downward activation economics and remain separate. They are not separate positive/negative BRP settlement tariffs. Negative prices remain negative. The source is 15-minute settlement data, not minute indicative prices. Month M records are validated after the 15th of M+1; initial publications are indicative and revisions possible. Retain qualitystatus rather than claiming invoice readiness. Refresh: daily. Simulated consultation datasets ods211/ods212 are deliberately excluded.
+`imbalanceprice` is the BRP settlement tariff; marginal incremental/decremental prices describe upward/downward activation economics and remain separate. They are not separate positive/negative BRP settlement tariffs. Negative prices remain negative. The source is 15-minute settlement data, not minute indicative prices. Month M records are validated after the 15th of M+1; initial publications are indicative and revisions possible. Retain qualitystatus; provisional records are not final settlement data. Refresh: daily. Simulated consultation datasets ods211/ods212 are deliberately excluded.
 
 ## Contract maintenance
 

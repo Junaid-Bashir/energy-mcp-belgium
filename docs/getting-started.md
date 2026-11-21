@@ -10,7 +10,7 @@ For development, clone the repository and install `python -m pip install -e ".[d
 
 ## Generic stdio launch description
 
-This common `mcpServers` JSON shape is illustrative: host configuration envelopes vary. The installed CLI below is the verified subprocess contract; ensure its environment is on the host PATH.
+This common `mcpServers` JSON shape is illustrative: host configuration envelopes vary. The installed CLI below is the stdio subprocess interface; ensure its environment is on the host PATH.
 
 ```json
 {"mcpServers":{"energy-belgium":{"command":"energy-mcp-belgium","args":[]}}}

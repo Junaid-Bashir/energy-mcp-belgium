@@ -12,4 +12,4 @@ Provider data may be missing, provisional or revised. Coverage diagnostics are n
 
 Do not post credentials, raw authenticated host traces or an exploit containing sensitive information in a public issue. For a public repository, use its GitHub **Security → Advisories → Report a vulnerability** option if available, or an owner-published private contact. If neither exists, open a minimal issue requesting a private reporting channel without including vulnerability details or secrets.
 
-This is a pre-1.0 project; fixes target the latest 0.1 release. No response-time guarantee is offered. A repository owner should confirm the private reporting channel before accepting sensitive reports.
+This is a pre-1.0 project; fixes target the latest 0.1 release. No response-time guarantee is offered. Use the private reporting options above for sensitive details.

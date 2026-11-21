@@ -1,6 +1,6 @@
-# Official sources and implementation choices
+# Technical references
 
-Reference check: **19 November 2026**. External APIs and clients can change; update the documented source contract and tests together when their behavior changes.
+External APIs and clients can change; update the documented source contract and tests together when their behavior changes.
 
 ## MCP
 
@@ -9,7 +9,7 @@ Reference check: **19 November 2026**. External APIs and clients can change; upd
 - [Tools](https://py.sdk.modelcontextprotocol.io/servers/tools/), [structured outputs](https://py.sdk.modelcontextprotocol.io/servers/structured-output/) and [resources](https://py.sdk.modelcontextprotocol.io/servers/resources/)
 - [Lifecycle](https://py.sdk.modelcontextprotocol.io/handlers/lifespan/), [transport](https://py.sdk.modelcontextprotocol.io/run/), [errors](https://py.sdk.modelcontextprotocol.io/servers/handling-errors/) and [testing](https://py.sdk.modelcontextprotocol.io/get-started/testing/)
 
-The package uses the official high-level MCPServer API and typed Pydantic output models. Local stdio fits a host-launched process; the experimental remote adapter is documented separately in the [deployment guide](remote-mcp.md). A lifespan owns the shared HTTP client. Stable resource endpoints expose dataset identities and methodology. Analytics fetches its source directly, avoiding mutable session handles and record resubmission. Python 3.11+ is the chosen baseline; plain records avoid a pandas dependency.
+The package uses the official high-level MCPServer API and typed Pydantic output models. Local stdio fits a host-launched process; the remote adapter is documented separately in the [deployment guide](remote-mcp.md). A lifespan owns the shared HTTP client. Stable resource endpoints expose dataset identities and methodology. Analytics fetches its source directly, avoiding mutable session handles and record resubmission. Python 3.11+ is the chosen baseline; plain records avoid a pandas dependency.
 
 ## Elia
 

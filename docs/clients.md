@@ -22,7 +22,7 @@ With a supported Node runtime and the installed server on PATH:
 npx --yes @modelcontextprotocol/inspector@2.16.0 --cli --config examples/inspector-config.json --server energy-belgium --method tools/list --format json
 ```
 
-If your system Node is older, this verified pattern selects the tested runtime without replacing system Node:
+If your system Node is older, this command selects the specified runtime without replacing system Node:
 
 ```sh
 npx --yes --package=node@22.23.4 --package=@modelcontextprotocol/inspector@2.16.0 mcp-inspector --cli --config examples/inspector-config.json --server energy-belgium --method tools/list --format json
@@ -40,9 +40,9 @@ The optional `examples/validate_inspector.py` runner requires explicit Node, Ins
 
 Endpoint: `https://energy-mcp-belgium.junaidbashir392.workers.dev/mcp`.
 
-The hosted service is experimental and currently blocked from public-demonstration readiness by Workers Free CPU limits. Successful connections may still encounter 503 / Cloudflare 1102; use local stdio when this happens. See [current status](remote-security.md#runtime-capacity-is-a-separate-public-readiness-gate).
+The hosted demo is best-effort and has no SLA. Runtime resource limits can cause HTTP 503 / Cloudflare 1102 errors; use local stdio if failures recur. See [service availability](remote-security.md#service-availability) and honor rate-limit retry guidance.
 
-A concrete remote configuration depends on the client. With the supported Node runtime, this official Inspector CLI form was tested:
+A concrete remote configuration depends on the client. With the supported Node runtime, use the official Inspector CLI:
 
 ```sh
 npx --yes @modelcontextprotocol/inspector@2.16.0 --cli https://energy-mcp-belgium.junaidbashir392.workers.dev/mcp --transport http --method tools/list --format json

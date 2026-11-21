@@ -21,13 +21,13 @@ This starts local **stdio MCP** and waits for an MCP client, not a chat prompt.
 
 ### Option 2 — Connect remotely
 
-The deployed **MCP Streamable HTTP** endpoint is:
+**Remote MCP:** A hosted demo endpoint is available for trying Energy MCP Belgium with compatible MCP clients over **Streamable HTTP**:
 
 ```text
 https://energy-mcp-belgium.junaidbashir392.workers.dev/mcp
 ```
 
-**Experimental, best-effort endpoint; not ready for public demonstration.** Inspector and ChatGPT end-to-end scenarios passed, but controlled hardening tests encountered Cloudflare CPU-limit errors on Workers Free. The hosted service uses Workers Free; there is no uptime promise or SLA. Use local stdio for dependable access and see the [current operational limitation](docs/remote-security.md#runtime-capacity-is-a-separate-public-readiness-gate).
+See [client setup](docs/clients.md#remote-streamable-http) for connection instructions and [service limits](docs/remote-security.md#service-availability) for availability and retry guidance.
 
 ```mermaid
 flowchart TD
@@ -65,7 +65,7 @@ The configuration envelope depends on the host. Ensure its PATH includes your en
 
 ## Use with ChatGPT
 
-The hosted endpoint has been validated end-to-end with ChatGPT, including structured Elia data and deterministic analytics. **The CPU limitation above still applies; successful scenarios are not a reliability guarantee.**
+Use the hosted endpoint with ChatGPT to retrieve structured Elia data and run deterministic energy and quality calculations.
 
 For accounts/workspaces with custom MCP creation permission, the current [OpenAI connection guide](https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt) describes:
 
@@ -111,7 +111,7 @@ Source: [Elia Open Data](https://opendata.elia.be/). See [contract details and c
 | Physical system imbalance: positive surplus / negative shortage | MW | `get_system_imbalance` |
 | Imbalance settlement price | EUR/MWh | `get_imbalance_prices` |
 
-During ChatGPT validation, the host/model asked for clarification before fetching. That is observed host behavior, not a server-generated chat response or a guarantee for every model. Instantaneous physical imbalance is not integrated as energy.
+Ask for **MW** or **EUR/MWh** explicitly. A compatible host can clarify an ambiguous question before selecting a tool; dialogue and tool selection depend on the host/model. Instantaneous physical imbalance is not integrated as energy.
 
 **Power is MW; energy is MWh.** `calculate_energy` fetches solar/wind/load power and integrates it deterministically in Python. The language model does not need to perform the arithmetic; the result includes coverage and does not fill missing intervals.
 
@@ -146,11 +146,11 @@ Other requests for a compatible host:
 - Compare Belgian solar and total wind generation over that period.
 - Is the Belgian total-load series complete for that period?
 
-## Tested end-to-end
+## Compatibility and validation
 
-Verified layers include official MCP Inspector, installed local stdio MCP, real records from all six Elia datasets, Cloudflare remote Streamable HTTP, and ChatGPT tool use. After hardening, ChatGPT returned eight solar records for a two-hour window, **2,191.975 MWh** for a separate one-hour solar window, clarified imbalance MW versus EUR/MWh, and retrieved both series for a solar/wind comparison. These are dated observations, not certification or a production availability claim.
+Tested with the official MCP Inspector, local stdio clients and ChatGPT over hosted Streamable HTTP. Validation covers all eight tool schemas, bounded real Elia queries, deterministic analytics and input/error handling.
 
-[Validation evidence and caveats](docs/validation.md) · [Remote deployment guide](docs/remote-mcp.md) · [Hosted security policy and CPU blocker](docs/remote-security.md) · [Local demo](docs/demo.md)
+[Validation methodology](docs/validation.md) · [Deployment guide](docs/remote-mcp.md) · [Hosted security and service limits](docs/remote-security.md) · [Local demo](docs/demo.md)
 
 ## Time and calculations
 
@@ -162,15 +162,15 @@ Belgian local days may contain **92, 96 or 100 quarter-hours**. Calculations use
 
 ## Limitations
 
-- Only Elia is supported, through local stdio and experimental remote Streamable HTTP MCP. No forecasts, weather, market actions or SolarCast integration are implemented.
+- Only Elia is supported, through local stdio and hosted Streamable HTTP MCP. No forecasts, weather, market actions or SolarCast integration are implemented.
 - Solar uses ods209 from **26 October 2026**; legacy solar stitching is not implemented.
 - Historical records can lag, contain nulls or be revised. Separate calls do not share an immutable snapshot.
 - Detailed results can be large: a measured 24-hour generation-mix response contained 1,152 records and approximately **534 KB** of MCP result. Prefer one-hour windows for mix and minute imbalance, or analytics when only totals/coverage are needed.
-- Measured client compatibility covers **Inspector CLI 2.16.0** (Node 22.23.4). Model-driven selection is host-dependent; these are validation examples, not guaranteed behavior for every host/model. Inspector GUI compatibility is not claimed. Remote Inspector and ChatGPT scenarios are documented in the validation guide; hosting remains subject to the CPU readiness gate.
+- Tool selection and free-text answers depend on the MCP host and model. See [client compatibility](docs/clients.md) and [validation methodology](docs/validation.md).
 
 ## Hosted limits and privacy
 
-Normal multi-tool questions were exercised. Hosted requests are rate limited, with shared budgets that can affect users behind the same egress address. On HTTP 429, honor `Retry-After` (currently 60 seconds); on an upstream capacity error, wait at least 60 seconds and reduce frequency/window size. Do not retry in a loop. CPU-limit 503 errors are a separate known hosting limitation; use local stdio if they recur. See the [exact maintainer policy](docs/remote-security.md).
+The hosted demo is best-effort, with no SLA. Requests are rate limited, and users behind the same egress address may share a budget. On HTTP 429, honor `Retry-After` (currently 60 seconds); on an upstream capacity error, wait at least 60 seconds and reduce frequency/window size. Do not retry in a loop. Resource limits can also cause HTTP 503 / Cloudflare 1102 errors. Use local stdio for repeated or sustained access if these errors recur. See the [exact maintainer policy](docs/remote-security.md).
 
 Operational telemetry intentionally excludes prompts, conversation content, raw arguments, full time-series responses, cookies and authorization headers. Persisted Worker invocation/application logs and tracing are disabled. Cloudflare and the chosen MCP host still apply their own platform data handling; this is not a claim of anonymous or zero-retention service.
 

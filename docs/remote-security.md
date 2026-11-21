@@ -1,6 +1,6 @@
 # Hosted MCP security and operations
 
-Reviewed 21 November 2026. This policy applies to the deployment adapter, not to
+This policy applies to the deployment adapter, not to
 the installed stdio CLI. It adds no energy tools, datasets, trading, arbitrary
 network, shell, filesystem or code-execution capability. The same eight-tool
 factory, immutable PyPI core and Elia contracts remain authoritative.
@@ -16,8 +16,7 @@ factory, immutable PyPI core and Elia contracts remain authoritative.
 | Medium | Prompts, tool arguments or credentials leak through diagnostics | Allow-listed JSON telemetry; verbose SDK/provider/HTTP logs suppressed; no persisted request logs or traces. |
 | Low impact, still rejected | Arbitrary network proxy/write attempts | Fixed core contracts plus hosted transport allowlist of six Elia HTTPS GET paths; no redirects or arbitrary URL input. |
 
-The named `test` environment remains the existing workers.dev service; it is not
-renamed production. The exact policy is checked into `deploy/cloudflare/wrangler.jsonc`:
+The `test` Wrangler environment configures the hosted workers.dev service. The exact policy is checked into `deploy/cloudflare/wrangler.jsonc`:
 
 | Binding | Namespace | Budget | Key/scope |
 |---|---:|---|---|
@@ -26,9 +25,8 @@ renamed production. The exact policy is checked into `deploy/cloudflare/wrangler
 | ELIA_BURST | 1003 | 20 Elia attempts / 10 s | All callers, per location |
 | ELIA_BUDGET | 1004 | 120 Elia attempts / 60 s | All callers, per location |
 
-These starting values leave room for initialize/discovery plus a seven-tool question
-and repeated ordinary interactive queries. They are demo safeguards, not Elia's
-published provider quotas. IP is not a user identity: ChatGPT/shared NAT egress
+These budgets support discovery and interactive multi-tool queries. They are
+service limits, not published Elia provider quotas. IP is not a user identity: ChatGPT/shared NAT egress
 may share a budget. The Worker uses Cloudflare's ingress `CF-Connecting-IP`, never
 a caller-supplied user ID. A missing/invalid IP uses one shared fallback key.
 The hash is used only by the native counter, never emitted as telemetry; it is
@@ -57,61 +55,32 @@ material; do not advertise this as a high-availability or unlimited public API.
 
 ## Provider correctness, cost and caching
 
-The unchanged core requires explicit-offset timestamps, UTC quarter-hour-aligned
+The core requires explicit-offset timestamps, UTC quarter-hour-aligned
 start/end, `[start,end)`, and at most **24 elapsed hours**. Its page size is 100,
 maximum 5,000 raw rows, with consistency checks and no silent partial return.
 Pages are awaited sequentially. Each HTTPX client has two connections, a 20-second
 timeout and 5-second connect timeout. These are per-client limits, not a global
 concurrency semaphore. Multiple hosted requests may run concurrently.
 
-Retries remain at most three per page for network errors and selected 429/5xx
+Retries are limited to three attempts per page for network errors and selected 429/5xx
 responses. Default backoff is 0.25 then 0.5 seconds; numeric Retry-After is honored
 only up to five seconds. Longer/non-numeric retry instructions stop with a useful
 error. Every retry also needs hosted admission, preventing an exhausted budget
-from producing another retry burst. No shared-core change or new PyPI release is
-needed for these deployment-only controls.
+from producing another retry burst.
 
 Heavy queries naturally cost more upstream units: a complete 24-hour minute series
 usually takes 15 pages, while mix depends on the number of categories and wind on
-the five raw components. Discovery/resources/health make no provider calls. No
-per-tool billing policy or second model-validation/dispatch implementation exists.
+the five raw components. Discovery/resources/health make no provider calls. Budgets count actual provider attempts rather than assigning per-tool weights.
 
-**Caching is deferred.** Elia can revise historical values and quality status.
-A cache needs an explicit freshness policy, provenance/retrieved_at treatment,
-correct key canonicalization and invalidation, especially near real time or when
-settlement validation changes. Native attempt budgets protect Elia without adding
-stale-result ambiguity or another storage product. MCP results are not silently
-truncated or cached.
+Responses are not cached. Elia can revise historical values and quality status, including settlement validation. Separate queries can therefore return different revisions; each response includes retrieval provenance. No result is silently truncated.
 
-The existing Worker incurs ordinary invocation/CPU/subrequest usage. Native rate
-checks and telemetry also consume some CPU; blocked requests still invoke the
-Worker. No plan upgrade, subscription, Analytics Engine, database, log destination,
-custom domain or other paid service is enabled by this configuration. Review
-[current pricing](https://developers.cloudflare.com/workers/platform/pricing/) and
-account limits before a larger launch. Do not project a business-scale bill from
-the few validation calls or treat rate counters as a spending limit.
+Workers execution, native rate checks, telemetry and provider subrequests consume platform resources. Rejected requests can still incur invocation and CPU usage. Rate counters are not spending caps. Maintainers should review [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/) and account limits when sizing a deployment.
 
-### Runtime capacity is a separate public-readiness gate
+## Service availability
 
-Workers Free's documented 10 ms CPU allowance is below the measured Python MCP
-workload (the hardened deployment's dashboard showed 39.02 ms median CPU;
-the earlier deployment showed approximately 84 ms). These mixed-traffic samples
-are not a performance comparison. Occasional successful bursts do not establish that the account's allowance
-is sufficient. A CPU-limit event was present in the earlier deployment, and a
-controlled remote discovery sequence after hardening also returned Cloudflare
-1102/HTTP 503 before reaching a rate-limit response. This is a runtime capacity
-blocker for broader public demonstration on Free, not an Elia or MCP schema error.
+The hosted demo is best-effort and has no uptime or response-time SLA. Runtime CPU limits can cause HTTP 503 / Cloudflare 1102 errors even for valid queries. If failures recur, use the local stdio server; repeatedly retrying does not increase the available CPU budget. HTTP 429 and upstream-capacity errors have separate retry guidance above.
 
-The hardened release's normal ChatGPT solar/energy/ambiguity/multi-tool checks
-passed, as did Inspector and controlled public validation failures. Local workerd
-confirmed native 429 at request 61 and health remained available, without Elia
-queries. The remote rate test was stopped at its first resource-limit error; it
-is not reported as a remotely observed 429. Resolve the CPU allowance and rerun
-that remote check before promoting the endpoint for public demonstration. The
-service remains on Free; the documented URL is experimental,
-not a launch-ready hosted service. A separately authorized plan
-change or reviewed runtime optimization is needed; neither billing changes nor
-an architectural rewrite are implied by the rate-limiting policy.
+The current hosted service uses Workers Free. Its 10 ms CPU allowance per request is insufficient for reliable execution of this Python MCP workload. For a dedicated deployment, choose runtime capacity that accommodates server initialization, validation, normalization and serialization. See [Workers resource limits](https://developers.cloudflare.com/workers/platform/limits/). Provider availability and publication delays are separate from runtime capacity.
 
 ## Public HTTP and authentication boundary
 
@@ -132,12 +101,7 @@ unexpected failures are generic. Logs never include exception text/stack traces.
 Cancelling a legacy call can defer cleanup until the request-scoped ASGI lifespan
 ends; no provider/background job is intentionally retained after the response.
 
-**PUBLIC READ-ONLY ENDPOINT IS ACCEPTABLE** for the bounded, monitored demonstration:
-public Elia data, no private data store, no account actions, no writes/trading,
-fixed network destinations and explicit admission limits. This recommendation is
-not a formal security certification or a promise to withstand distributed abuse.
-Authentication is appropriate if private data, market actions, user quotas or a
-larger guaranteed service are introduced. Application OAuth is not configured.
+The hosted endpoint does not require authentication: it exposes public Elia data through read-only, bounded queries, with fixed network destinations and no private data store or account actions. These restrictions do not guarantee protection against distributed abuse. Private data, market actions, individual user quotas or guaranteed service levels require a separate authentication and capacity design.
 
 [WAF custom rules](https://developers.cloudflare.com/waf/custom-rules/)
 are zone-scoped; a workers.dev deployment cannot attach its own zone WAF policy to Cloudflare's
@@ -186,11 +150,7 @@ This deliberate privacy tradeoff means detailed historical tool failure counts a
 unavailable when no live capture is running. Sampled/platform metrics can lag or
 omit events; report only the observed dataset, time window and precision.
 
-If persistence is deliberately enabled later, [current Workers Logs retention](https://developers.cloudflare.com/workers/observability/logs/workers-logs/)
-depends on the plan (3 days Free / 7 days Paid as of this review), with pricing
-changing on 1 December 2026. Re-review platform metadata, sampling, retention and
-cost before doing that. Do not claim that disabling application persistence erases
-Cloudflare's platform/security/account metadata retention.
+Enabling persisted logs changes metadata retention and cost. Consult [Workers Logs documentation](https://developers.cloudflare.com/workers/observability/logs/workers-logs/) for plan-specific retention and pricing before enabling it. Disabling application-log persistence does not erase Cloudflare platform, security or account metadata.
 
 ## Deploy, inspect, suspend and recover
 
@@ -221,5 +181,4 @@ the Worker, GitHub repository or package as an emergency shutdown mechanism.
 
 For recovery, review the chosen known-good commit/config and its CI, redeploy
 with the explicit hostname, then repeat health, Inspector and ChatGPT regressions.
-An older version may lack protections; do not blindly roll back to the unguarded
-deployment. Verify the resulting route state after every recovery change.
+An older version may lack protections; confirm that the selected version includes all required admission controls. Verify the resulting route state after every recovery change.
