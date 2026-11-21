@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "energy-mcp-belgium"
+version = "0.1.0"
+description = "MCP server for structured access to Belgian electricity-system data from Elia Open Data"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY.md"]
+keywords = ["mcp", "belgium", "electricity", "elia", "energy", "open-data"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = ["mcp>=2.3,<3", "httpx>=0.28,<0.29", "pydantic>=2.12,<3", "tzdata>=2025.2; sys_platform == 'win32'"]
+
+[project.urls]
+Repository = "https://github.com/Junaid-Bashir/energy-mcp-belgium"
+Documentation = "https://github.com/Junaid-Bashir/energy-mcp-belgium/blob/main/docs/getting-started.md"
+Issues = "https://github.com/Junaid-Bashir/energy-mcp-belgium/issues"
+
+[project.optional-dependencies]
+dev = ["pytest>=9", "pytest-asyncio>=1", "ruff>=0.14", "mypy>=1.18", "build>=1.3", "twine>=6"]
+
+[project.scripts]
+energy-mcp-belgium = "energy_mcp_belgium.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/energy_mcp_belgium"]
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/tests", "/docs", "/examples", "/deploy", "/pyproject.toml", "/README.md", "/CHANGELOG.md", "/LICENSE", "/CONTRIBUTING.md", "/THIRD_PARTY.md", "/SECURITY.md", "/.gitignore", "/.github"]
+exclude = ["**/__pycache__/**", "**/*.pyc", "**/*.jsonl", "**/*.log", "/.local/**", "/.integration/**", "**/node_modules/**", "**/python_modules/**", "**/.wrangler/**", "**/.venv/**", "**/.venv-workers/**", "**/.dev.vars*", "**/pylock.toml"]
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["deploy/cloudflare/src"]
+markers = ["live: opt-in live Elia requests (ENERGY_MCP_LIVE=1)"]
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".venv", ".clean-venv", "dist", ".integration", ".local"]
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src", "deploy/cloudflare/src"]
+mypy_path = "deploy/cloudflare/typings"

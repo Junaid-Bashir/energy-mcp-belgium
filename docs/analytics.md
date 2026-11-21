@@ -1,0 +1,11 @@
+# Deterministic analytics
+
+Both analytics tools fetch a bounded source directly. This avoids resending records through an LLM, mutable session handles, resource snapshots and cache invalidation. Each fetch can reflect later provider revisions; provenance includes retrieval time. No claim of identical snapshots between separate calls.
+
+`calculate_energy` supports `solar`, `wind`, `load` only. Treat each published quarter-hour average power value as covering `[timestamp,timestamp+15min)`: `energy_mwh = sum(non_null_mw) * 0.25`. This is rectangle integration, not trapezoidal interpolation between samples. It reports observed energy and coverage, not an estimate for a complete day. Missing intervals and null values contribute no energy; no numeric zero is invented. All missing yields `energy_mwh=null`; genuine zero generation yields zero. `covered_hours` counts non-null intervals. Duplicate or off-grid records cannot be integrated. Instantaneous minute imbalance and prices are not eligible power series.
+
+`check_data_quality` supports solar, wind, load, system imbalance and imbalance prices. Generation mix is excluded: it has multiple categorical keys per timestamp. Price coverage requires all three exposed prices to be non-null. Diagnostics include expected grid slots, absent slots, null records, duplicate excess records, off-grid records, first/last timestamps and percentage of unique non-null grid slots. Status is `complete`, `incomplete`, or `invalid`. Retrieval fails clearly on provider duplicates before analytics; the shared diagnostic implementation also detects duplicates when directly tested. This is availability diagnosis, not physical plausibility validation or provider quality certification.
+
+No repair, interpolation, resampling, forecasts or LLM arithmetic. Provider quality status remains separate from computed coverage.
+
+Helper-level validation also converts timestamps and metadata bounds to UTC before subtraction, rejects nonpositive/incomplete metadata grids, and requires stable value fields and dimensions. Energy integration rejects multiple value columns, non-15-minute resolution, prices, instantaneous SI and generation-mix source records even when called directly in Python.

@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "source": "elia",
+    "dataset_id": "ods209",
+    "source_url": "https://opendata.elia.be/explore/dataset/ods209/",
+    "retrieved_at": "2026-11-19T14:45:16.566485Z",
+    "start": "2026-11-17T10:00:00Z",
+    "end": "2026-11-17T11:00:00Z",
+    "timezone": "UTC",
+    "unit": "MW",
+    "resolution_minutes": 15,
+    "record_count": 4,
+    "missing_value_count": 0,
+    "status": "ok",
+    "caveats": [
+      "Measured and upscaled PV; available from 2026-10-26 only; never forecasts."
+    ]
+  },
+  "records": [
+    {
+      "timestamp": "2026-11-17T10:00:00Z",
+      "values": {
+        "generation_mw": 293.89
+      },
+      "dimensions": {
+        "region": "Belgium",
+        "gridconnectiontype": "Total"
+      },
+      "quality_status": null
+    },
+    {
+      "timestamp": "2026-11-17T10:15:00Z",
+      "values": {
+        "generation_mw": 376.67
+      },
+      "dimensions": {
+        "region": "Belgium",
+        "gridconnectiontype": "Total"
+      },
+      "quality_status": null
+    },
+    {
+      "timestamp": "2026-11-17T10:30:00Z",
+      "values": {
+        "generation_mw": 588.25
+      },
+      "dimensions": {
+        "region": "Belgium",
+        "gridconnectiontype": "Total"
+      },
+      "quality_status": null
+    },
+    {
+      "timestamp": "2026-11-17T10:45:00Z",
+      "values": {
+        "generation_mw": 910.86
+      },
+      "dimensions": {
+        "region": "Belgium",
+        "gridconnectiontype": "Total"
+      },
+      "quality_status": null
+    }
+  ]
+}

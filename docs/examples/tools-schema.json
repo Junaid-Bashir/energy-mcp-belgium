@@ -1,0 +1,1688 @@
+{
+  "tools": [
+    {
+      "name": "get_solar_generation",
+      "description": "Retrieve Belgian national measured/upscaled PV generation in MW, never forecasts. Offset-aware start/end, max 24h; solar from 26 October 2026.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "Inclusive interval start, ISO 8601 with Z or an explicit offset (for example 2026-11-17T10:00:00Z). Must align to a UTC quarter-hour; start < end; maximum 24 elapsed hours.",
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "description": "Exclusive interval end, ISO 8601 with Z or an explicit offset. UTC quarter-hour aligned, after start and no more than 24 elapsed hours later. Split longer ranges, including 25-hour Belgian DST days.",
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "get_solar_generationArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/Metadata"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/$defs/Record"
+            },
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metadata",
+          "records"
+        ],
+        "$defs": {
+          "Metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "const": "elia",
+                "default": "elia",
+                "title": "Source",
+                "type": "string"
+              },
+              "dataset_id": {
+                "title": "Dataset Id",
+                "type": "string"
+              },
+              "source_url": {
+                "title": "Source Url",
+                "type": "string"
+              },
+              "retrieved_at": {
+                "format": "date-time",
+                "title": "Retrieved At",
+                "type": "string"
+              },
+              "start": {
+                "format": "date-time",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "format": "date-time",
+                "title": "End",
+                "type": "string"
+              },
+              "timezone": {
+                "const": "UTC",
+                "default": "UTC",
+                "title": "Timezone",
+                "type": "string"
+              },
+              "unit": {
+                "description": "Unit of the source measurements. For analytics this remains the input unit; energy_mwh is explicitly MWh.",
+                "title": "Unit",
+                "type": "string"
+              },
+              "resolution_minutes": {
+                "exclusiveMinimum": 0,
+                "title": "Resolution Minutes",
+                "type": "integer"
+              },
+              "record_count": {
+                "minimum": 0,
+                "title": "Record Count",
+                "type": "integer"
+              },
+              "missing_value_count": {
+                "minimum": 0,
+                "title": "Missing Value Count",
+                "type": "integer"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "no_data"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "caveats": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Caveats",
+                "type": "array"
+              }
+            },
+            "required": [
+              "dataset_id",
+              "source_url",
+              "retrieved_at",
+              "start",
+              "end",
+              "unit",
+              "resolution_minutes",
+              "record_count",
+              "missing_value_count",
+              "status",
+              "caveats"
+            ],
+            "title": "Metadata",
+            "type": "object"
+          },
+          "Record": {
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "format": "date-time",
+                "title": "Timestamp",
+                "type": "string"
+              },
+              "values": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "description": "Normalized measurements as numbers; null means unavailable, never zero. Units and interval duration are in metadata.",
+                "title": "Values",
+                "type": "object"
+              },
+              "dimensions": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "title": "Dimensions",
+                "type": "object"
+              },
+              "quality_status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Quality Status"
+              }
+            },
+            "required": [
+              "timestamp",
+              "values"
+            ],
+            "title": "Record",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "title": "DataResult"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "get_wind_generation",
+      "description": "Retrieve Belgian measured/upscaled wind MW: total, onshore or offshore. Offset-aware start/end, max 24h; missing components yield null totals.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "Inclusive interval start, ISO 8601 with Z or an explicit offset (for example 2026-11-17T10:00:00Z). Must align to a UTC quarter-hour; start < end; maximum 24 elapsed hours.",
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "description": "Exclusive interval end, ISO 8601 with Z or an explicit offset. UTC quarter-hour aligned, after start and no more than 24 elapsed hours later. Split longer ranges, including 25-hour Belgian DST days.",
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "wind_type": {
+            "default": "total",
+            "description": "total (default): Belgian onshore plus offshore; onshore: four regional/grid components; offshore: federal offshore component. Applies only to wind; leave total for other series. Incomplete component sets yield null, not partial totals.",
+            "enum": [
+              "total",
+              "onshore",
+              "offshore"
+            ],
+            "title": "Wind Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "get_wind_generationArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/Metadata"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/$defs/Record"
+            },
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metadata",
+          "records"
+        ],
+        "$defs": {
+          "Metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "const": "elia",
+                "default": "elia",
+                "title": "Source",
+                "type": "string"
+              },
+              "dataset_id": {
+                "title": "Dataset Id",
+                "type": "string"
+              },
+              "source_url": {
+                "title": "Source Url",
+                "type": "string"
+              },
+              "retrieved_at": {
+                "format": "date-time",
+                "title": "Retrieved At",
+                "type": "string"
+              },
+              "start": {
+                "format": "date-time",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "format": "date-time",
+                "title": "End",
+                "type": "string"
+              },
+              "timezone": {
+                "const": "UTC",
+                "default": "UTC",
+                "title": "Timezone",
+                "type": "string"
+              },
+              "unit": {
+                "description": "Unit of the source measurements. For analytics this remains the input unit; energy_mwh is explicitly MWh.",
+                "title": "Unit",
+                "type": "string"
+              },
+              "resolution_minutes": {
+                "exclusiveMinimum": 0,
+                "title": "Resolution Minutes",
+                "type": "integer"
+              },
+              "record_count": {
+                "minimum": 0,
+                "title": "Record Count",
+                "type": "integer"
+              },
+              "missing_value_count": {
+                "minimum": 0,
+                "title": "Missing Value Count",
+                "type": "integer"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "no_data"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "caveats": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Caveats",
+                "type": "array"
+              }
+            },
+            "required": [
+              "dataset_id",
+              "source_url",
+              "retrieved_at",
+              "start",
+              "end",
+              "unit",
+              "resolution_minutes",
+              "record_count",
+              "missing_value_count",
+              "status",
+              "caveats"
+            ],
+            "title": "Metadata",
+            "type": "object"
+          },
+          "Record": {
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "format": "date-time",
+                "title": "Timestamp",
+                "type": "string"
+              },
+              "values": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "description": "Normalized measurements as numbers; null means unavailable, never zero. Units and interval duration are in metadata.",
+                "title": "Values",
+                "type": "object"
+              },
+              "dimensions": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "title": "Dimensions",
+                "type": "object"
+              },
+              "quality_status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Quality Status"
+              }
+            },
+            "required": [
+              "timestamp",
+              "values"
+            ],
+            "title": "Record",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "title": "DataResult"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "get_load",
+      "description": "Retrieve Belgian total load MW including estimated losses, computed from measurements and extrapolations. Offset-aware start/end, max 24h; never forecasts.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "Inclusive interval start, ISO 8601 with Z or an explicit offset (for example 2026-11-17T10:00:00Z). Must align to a UTC quarter-hour; start < end; maximum 24 elapsed hours.",
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "description": "Exclusive interval end, ISO 8601 with Z or an explicit offset. UTC quarter-hour aligned, after start and no more than 24 elapsed hours later. Split longer ranges, including 25-hour Belgian DST days.",
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "get_loadArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/Metadata"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/$defs/Record"
+            },
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metadata",
+          "records"
+        ],
+        "$defs": {
+          "Metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "const": "elia",
+                "default": "elia",
+                "title": "Source",
+                "type": "string"
+              },
+              "dataset_id": {
+                "title": "Dataset Id",
+                "type": "string"
+              },
+              "source_url": {
+                "title": "Source Url",
+                "type": "string"
+              },
+              "retrieved_at": {
+                "format": "date-time",
+                "title": "Retrieved At",
+                "type": "string"
+              },
+              "start": {
+                "format": "date-time",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "format": "date-time",
+                "title": "End",
+                "type": "string"
+              },
+              "timezone": {
+                "const": "UTC",
+                "default": "UTC",
+                "title": "Timezone",
+                "type": "string"
+              },
+              "unit": {
+                "description": "Unit of the source measurements. For analytics this remains the input unit; energy_mwh is explicitly MWh.",
+                "title": "Unit",
+                "type": "string"
+              },
+              "resolution_minutes": {
+                "exclusiveMinimum": 0,
+                "title": "Resolution Minutes",
+                "type": "integer"
+              },
+              "record_count": {
+                "minimum": 0,
+                "title": "Record Count",
+                "type": "integer"
+              },
+              "missing_value_count": {
+                "minimum": 0,
+                "title": "Missing Value Count",
+                "type": "integer"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "no_data"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "caveats": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Caveats",
+                "type": "array"
+              }
+            },
+            "required": [
+              "dataset_id",
+              "source_url",
+              "retrieved_at",
+              "start",
+              "end",
+              "unit",
+              "resolution_minutes",
+              "record_count",
+              "missing_value_count",
+              "status",
+              "caveats"
+            ],
+            "title": "Metadata",
+            "type": "object"
+          },
+          "Record": {
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "format": "date-time",
+                "title": "Timestamp",
+                "type": "string"
+              },
+              "values": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "description": "Normalized measurements as numbers; null means unavailable, never zero. Units and interval duration are in metadata.",
+                "title": "Values",
+                "type": "object"
+              },
+              "dimensions": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "title": "Dimensions",
+                "type": "object"
+              },
+              "quality_status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Quality Status"
+              }
+            },
+            "required": [
+              "timestamp",
+              "values"
+            ],
+            "title": "Record",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "title": "DataResult"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "get_generation_mix",
+      "description": "Retrieve Belgian control-area generation MW by both official fuel classifications. Offset-aware start/end, max 24h; preserve labels and nulls.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "Inclusive interval start, ISO 8601 with Z or an explicit offset (for example 2026-11-17T10:00:00Z). Must align to a UTC quarter-hour; start < end; maximum 24 elapsed hours.",
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "description": "Exclusive interval end, ISO 8601 with Z or an explicit offset. UTC quarter-hour aligned, after start and no more than 24 elapsed hours later. Split longer ranges, including 25-hour Belgian DST days.",
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "get_generation_mixArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/Metadata"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/$defs/Record"
+            },
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metadata",
+          "records"
+        ],
+        "$defs": {
+          "Metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "const": "elia",
+                "default": "elia",
+                "title": "Source",
+                "type": "string"
+              },
+              "dataset_id": {
+                "title": "Dataset Id",
+                "type": "string"
+              },
+              "source_url": {
+                "title": "Source Url",
+                "type": "string"
+              },
+              "retrieved_at": {
+                "format": "date-time",
+                "title": "Retrieved At",
+                "type": "string"
+              },
+              "start": {
+                "format": "date-time",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "format": "date-time",
+                "title": "End",
+                "type": "string"
+              },
+              "timezone": {
+                "const": "UTC",
+                "default": "UTC",
+                "title": "Timezone",
+                "type": "string"
+              },
+              "unit": {
+                "description": "Unit of the source measurements. For analytics this remains the input unit; energy_mwh is explicitly MWh.",
+                "title": "Unit",
+                "type": "string"
+              },
+              "resolution_minutes": {
+                "exclusiveMinimum": 0,
+                "title": "Resolution Minutes",
+                "type": "integer"
+              },
+              "record_count": {
+                "minimum": 0,
+                "title": "Record Count",
+                "type": "integer"
+              },
+              "missing_value_count": {
+                "minimum": 0,
+                "title": "Missing Value Count",
+                "type": "integer"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "no_data"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "caveats": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Caveats",
+                "type": "array"
+              }
+            },
+            "required": [
+              "dataset_id",
+              "source_url",
+              "retrieved_at",
+              "start",
+              "end",
+              "unit",
+              "resolution_minutes",
+              "record_count",
+              "missing_value_count",
+              "status",
+              "caveats"
+            ],
+            "title": "Metadata",
+            "type": "object"
+          },
+          "Record": {
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "format": "date-time",
+                "title": "Timestamp",
+                "type": "string"
+              },
+              "values": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "description": "Normalized measurements as numbers; null means unavailable, never zero. Units and interval duration are in metadata.",
+                "title": "Values",
+                "type": "object"
+              },
+              "dimensions": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "title": "Dimensions",
+                "type": "object"
+              },
+              "quality_status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Quality Status"
+              }
+            },
+            "required": [
+              "timestamp",
+              "values"
+            ],
+            "title": "Record",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "title": "DataResult"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "get_system_imbalance",
+      "description": "Retrieve physical Belgian system imbalance in MW, not a price: positive surplus, negative shortage. Instantaneous 1-minute informational values; do not integrate to MWh. Offset-aware start/end, max 24h. Clarify bare 'imbalance' requests lacking MW versus price context.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "Inclusive interval start, ISO 8601 with Z or an explicit offset (for example 2026-11-17T10:00:00Z). Must align to a UTC quarter-hour; start < end; maximum 24 elapsed hours.",
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "description": "Exclusive interval end, ISO 8601 with Z or an explicit offset. UTC quarter-hour aligned, after start and no more than 24 elapsed hours later. Split longer ranges, including 25-hour Belgian DST days.",
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "get_system_imbalanceArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/Metadata"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/$defs/Record"
+            },
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metadata",
+          "records"
+        ],
+        "$defs": {
+          "Metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "const": "elia",
+                "default": "elia",
+                "title": "Source",
+                "type": "string"
+              },
+              "dataset_id": {
+                "title": "Dataset Id",
+                "type": "string"
+              },
+              "source_url": {
+                "title": "Source Url",
+                "type": "string"
+              },
+              "retrieved_at": {
+                "format": "date-time",
+                "title": "Retrieved At",
+                "type": "string"
+              },
+              "start": {
+                "format": "date-time",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "format": "date-time",
+                "title": "End",
+                "type": "string"
+              },
+              "timezone": {
+                "const": "UTC",
+                "default": "UTC",
+                "title": "Timezone",
+                "type": "string"
+              },
+              "unit": {
+                "description": "Unit of the source measurements. For analytics this remains the input unit; energy_mwh is explicitly MWh.",
+                "title": "Unit",
+                "type": "string"
+              },
+              "resolution_minutes": {
+                "exclusiveMinimum": 0,
+                "title": "Resolution Minutes",
+                "type": "integer"
+              },
+              "record_count": {
+                "minimum": 0,
+                "title": "Record Count",
+                "type": "integer"
+              },
+              "missing_value_count": {
+                "minimum": 0,
+                "title": "Missing Value Count",
+                "type": "integer"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "no_data"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "caveats": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Caveats",
+                "type": "array"
+              }
+            },
+            "required": [
+              "dataset_id",
+              "source_url",
+              "retrieved_at",
+              "start",
+              "end",
+              "unit",
+              "resolution_minutes",
+              "record_count",
+              "missing_value_count",
+              "status",
+              "caveats"
+            ],
+            "title": "Metadata",
+            "type": "object"
+          },
+          "Record": {
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "format": "date-time",
+                "title": "Timestamp",
+                "type": "string"
+              },
+              "values": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "description": "Normalized measurements as numbers; null means unavailable, never zero. Units and interval duration are in metadata.",
+                "title": "Values",
+                "type": "object"
+              },
+              "dimensions": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "title": "Dimensions",
+                "type": "object"
+              },
+              "quality_status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Quality Status"
+              }
+            },
+            "required": [
+              "timestamp",
+              "values"
+            ],
+            "title": "Record",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "title": "DataResult"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "get_imbalance_prices",
+      "description": "Retrieve quarter-hour Belgian BRP settlement and distinct upward/downward marginal activation prices in EUR/MWh, not physical imbalance MW. Offset-aware start/end, max 24h; provisional until validated. No separate positive/negative BRP tariff is invented.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "description": "Inclusive interval start, ISO 8601 with Z or an explicit offset (for example 2026-11-17T10:00:00Z). Must align to a UTC quarter-hour; start < end; maximum 24 elapsed hours.",
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "description": "Exclusive interval end, ISO 8601 with Z or an explicit offset. UTC quarter-hour aligned, after start and no more than 24 elapsed hours later. Split longer ranges, including 25-hour Belgian DST days.",
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "get_imbalance_pricesArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/Metadata"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/$defs/Record"
+            },
+            "title": "Records",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metadata",
+          "records"
+        ],
+        "$defs": {
+          "Metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "const": "elia",
+                "default": "elia",
+                "title": "Source",
+                "type": "string"
+              },
+              "dataset_id": {
+                "title": "Dataset Id",
+                "type": "string"
+              },
+              "source_url": {
+                "title": "Source Url",
+                "type": "string"
+              },
+              "retrieved_at": {
+                "format": "date-time",
+                "title": "Retrieved At",
+                "type": "string"
+              },
+              "start": {
+                "format": "date-time",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "format": "date-time",
+                "title": "End",
+                "type": "string"
+              },
+              "timezone": {
+                "const": "UTC",
+                "default": "UTC",
+                "title": "Timezone",
+                "type": "string"
+              },
+              "unit": {
+                "description": "Unit of the source measurements. For analytics this remains the input unit; energy_mwh is explicitly MWh.",
+                "title": "Unit",
+                "type": "string"
+              },
+              "resolution_minutes": {
+                "exclusiveMinimum": 0,
+                "title": "Resolution Minutes",
+                "type": "integer"
+              },
+              "record_count": {
+                "minimum": 0,
+                "title": "Record Count",
+                "type": "integer"
+              },
+              "missing_value_count": {
+                "minimum": 0,
+                "title": "Missing Value Count",
+                "type": "integer"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "no_data"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "caveats": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Caveats",
+                "type": "array"
+              }
+            },
+            "required": [
+              "dataset_id",
+              "source_url",
+              "retrieved_at",
+              "start",
+              "end",
+              "unit",
+              "resolution_minutes",
+              "record_count",
+              "missing_value_count",
+              "status",
+              "caveats"
+            ],
+            "title": "Metadata",
+            "type": "object"
+          },
+          "Record": {
+            "additionalProperties": false,
+            "properties": {
+              "timestamp": {
+                "format": "date-time",
+                "title": "Timestamp",
+                "type": "string"
+              },
+              "values": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "description": "Normalized measurements as numbers; null means unavailable, never zero. Units and interval duration are in metadata.",
+                "title": "Values",
+                "type": "object"
+              },
+              "dimensions": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "title": "Dimensions",
+                "type": "object"
+              },
+              "quality_status": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Quality Status"
+              }
+            },
+            "required": [
+              "timestamp",
+              "values"
+            ],
+            "title": "Record",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "title": "DataResult"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "calculate_energy",
+      "description": "Calculate solar/wind generation energy or total-load energy in MWh by fetching its own power source and summing MW times 0.25h. Use for energy, rather than power in MW. Offset-aware start/end, max 24h; coverage reported, no gap filling. No raw-record input.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "series": {
+            "description": "Source to fetch and integrate: solar PV generation, wind generation or Belgian total load. Fetches data itself; do not resend records. Not suitable for instantaneous imbalance or prices.",
+            "enum": [
+              "solar",
+              "wind",
+              "load"
+            ],
+            "title": "Series",
+            "type": "string"
+          },
+          "start": {
+            "description": "Inclusive interval start, ISO 8601 with Z or an explicit offset (for example 2026-11-17T10:00:00Z). Must align to a UTC quarter-hour; start < end; maximum 24 elapsed hours.",
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "description": "Exclusive interval end, ISO 8601 with Z or an explicit offset. UTC quarter-hour aligned, after start and no more than 24 elapsed hours later. Split longer ranges, including 25-hour Belgian DST days.",
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "wind_type": {
+            "default": "total",
+            "description": "total (default): Belgian onshore plus offshore; onshore: four regional/grid components; offshore: federal offshore component. Applies only to wind; leave total for other series. Incomplete component sets yield null, not partial totals.",
+            "enum": [
+              "total",
+              "onshore",
+              "offshore"
+            ],
+            "title": "Wind Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "series",
+          "start",
+          "end"
+        ],
+        "title": "calculate_energyArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/Metadata"
+          },
+          "energy_mwh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observed energy in MWh over available intervals; null if no usable power values. No gap filling or full-period estimate.",
+            "title": "Energy Mwh"
+          },
+          "covered_hours": {
+            "description": "Elapsed hours with usable quarter-hour power measurements.",
+            "title": "Covered Hours",
+            "type": "number"
+          },
+          "quality": {
+            "$ref": "#/$defs/QualityResult"
+          },
+          "method": {
+            "default": "Sum non-null interval-average MW times fixed interval hours; no gap filling.",
+            "title": "Method",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metadata",
+          "energy_mwh",
+          "covered_hours",
+          "quality"
+        ],
+        "$defs": {
+          "Metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "const": "elia",
+                "default": "elia",
+                "title": "Source",
+                "type": "string"
+              },
+              "dataset_id": {
+                "title": "Dataset Id",
+                "type": "string"
+              },
+              "source_url": {
+                "title": "Source Url",
+                "type": "string"
+              },
+              "retrieved_at": {
+                "format": "date-time",
+                "title": "Retrieved At",
+                "type": "string"
+              },
+              "start": {
+                "format": "date-time",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "format": "date-time",
+                "title": "End",
+                "type": "string"
+              },
+              "timezone": {
+                "const": "UTC",
+                "default": "UTC",
+                "title": "Timezone",
+                "type": "string"
+              },
+              "unit": {
+                "description": "Unit of the source measurements. For analytics this remains the input unit; energy_mwh is explicitly MWh.",
+                "title": "Unit",
+                "type": "string"
+              },
+              "resolution_minutes": {
+                "exclusiveMinimum": 0,
+                "title": "Resolution Minutes",
+                "type": "integer"
+              },
+              "record_count": {
+                "minimum": 0,
+                "title": "Record Count",
+                "type": "integer"
+              },
+              "missing_value_count": {
+                "minimum": 0,
+                "title": "Missing Value Count",
+                "type": "integer"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "no_data"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "caveats": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Caveats",
+                "type": "array"
+              }
+            },
+            "required": [
+              "dataset_id",
+              "source_url",
+              "retrieved_at",
+              "start",
+              "end",
+              "unit",
+              "resolution_minutes",
+              "record_count",
+              "missing_value_count",
+              "status",
+              "caveats"
+            ],
+            "title": "Metadata",
+            "type": "object"
+          },
+          "QualityResult": {
+            "additionalProperties": false,
+            "properties": {
+              "metadata": {
+                "$ref": "#/$defs/Metadata"
+              },
+              "record_count": {
+                "title": "Record Count",
+                "type": "integer"
+              },
+              "expected_intervals": {
+                "title": "Expected Intervals",
+                "type": "integer"
+              },
+              "missing_intervals": {
+                "title": "Missing Intervals",
+                "type": "integer"
+              },
+              "null_intervals": {
+                "title": "Null Intervals",
+                "type": "integer"
+              },
+              "duplicate_timestamps": {
+                "title": "Duplicate Timestamps",
+                "type": "integer"
+              },
+              "off_grid_records": {
+                "title": "Off Grid Records",
+                "type": "integer"
+              },
+              "coverage_pct": {
+                "title": "Coverage Pct",
+                "type": "number"
+              },
+              "first_timestamp": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "First Timestamp"
+              },
+              "last_timestamp": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Last Timestamp"
+              },
+              "status": {
+                "enum": [
+                  "complete",
+                  "incomplete",
+                  "invalid"
+                ],
+                "title": "Status",
+                "type": "string"
+              }
+            },
+            "required": [
+              "metadata",
+              "record_count",
+              "expected_intervals",
+              "missing_intervals",
+              "null_intervals",
+              "duplicate_timestamps",
+              "off_grid_records",
+              "coverage_pct",
+              "first_timestamp",
+              "last_timestamp",
+              "status"
+            ],
+            "title": "QualityResult",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "title": "EnergyResult"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "check_data_quality",
+      "description": "Fetch one Belgian series and diagnose gaps, nulls, duplicate timestamps and coverage without repair. Offset-aware start/end, max 24h; mix excluded because it has multiple keys.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "series": {
+            "description": "Source to fetch and diagnose for this exact range. Availability/coverage only, not physical plausibility or settlement validation. Mix is excluded because it has multiple categorical series.",
+            "enum": [
+              "solar",
+              "wind",
+              "load",
+              "system_imbalance",
+              "imbalance_prices"
+            ],
+            "title": "Series",
+            "type": "string"
+          },
+          "start": {
+            "description": "Inclusive interval start, ISO 8601 with Z or an explicit offset (for example 2026-11-17T10:00:00Z). Must align to a UTC quarter-hour; start < end; maximum 24 elapsed hours.",
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "end": {
+            "description": "Exclusive interval end, ISO 8601 with Z or an explicit offset. UTC quarter-hour aligned, after start and no more than 24 elapsed hours later. Split longer ranges, including 25-hour Belgian DST days.",
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "wind_type": {
+            "default": "total",
+            "description": "total (default): Belgian onshore plus offshore; onshore: four regional/grid components; offshore: federal offshore component. Applies only to wind; leave total for other series. Incomplete component sets yield null, not partial totals.",
+            "enum": [
+              "total",
+              "onshore",
+              "offshore"
+            ],
+            "title": "Wind Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "series",
+          "start",
+          "end"
+        ],
+        "title": "check_data_qualityArguments"
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "$ref": "#/$defs/Metadata"
+          },
+          "record_count": {
+            "title": "Record Count",
+            "type": "integer"
+          },
+          "expected_intervals": {
+            "title": "Expected Intervals",
+            "type": "integer"
+          },
+          "missing_intervals": {
+            "title": "Missing Intervals",
+            "type": "integer"
+          },
+          "null_intervals": {
+            "title": "Null Intervals",
+            "type": "integer"
+          },
+          "duplicate_timestamps": {
+            "title": "Duplicate Timestamps",
+            "type": "integer"
+          },
+          "off_grid_records": {
+            "title": "Off Grid Records",
+            "type": "integer"
+          },
+          "coverage_pct": {
+            "title": "Coverage Pct",
+            "type": "number"
+          },
+          "first_timestamp": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Timestamp"
+          },
+          "last_timestamp": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Timestamp"
+          },
+          "status": {
+            "enum": [
+              "complete",
+              "incomplete",
+              "invalid"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metadata",
+          "record_count",
+          "expected_intervals",
+          "missing_intervals",
+          "null_intervals",
+          "duplicate_timestamps",
+          "off_grid_records",
+          "coverage_pct",
+          "first_timestamp",
+          "last_timestamp",
+          "status"
+        ],
+        "$defs": {
+          "Metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "const": "elia",
+                "default": "elia",
+                "title": "Source",
+                "type": "string"
+              },
+              "dataset_id": {
+                "title": "Dataset Id",
+                "type": "string"
+              },
+              "source_url": {
+                "title": "Source Url",
+                "type": "string"
+              },
+              "retrieved_at": {
+                "format": "date-time",
+                "title": "Retrieved At",
+                "type": "string"
+              },
+              "start": {
+                "format": "date-time",
+                "title": "Start",
+                "type": "string"
+              },
+              "end": {
+                "format": "date-time",
+                "title": "End",
+                "type": "string"
+              },
+              "timezone": {
+                "const": "UTC",
+                "default": "UTC",
+                "title": "Timezone",
+                "type": "string"
+              },
+              "unit": {
+                "description": "Unit of the source measurements. For analytics this remains the input unit; energy_mwh is explicitly MWh.",
+                "title": "Unit",
+                "type": "string"
+              },
+              "resolution_minutes": {
+                "exclusiveMinimum": 0,
+                "title": "Resolution Minutes",
+                "type": "integer"
+              },
+              "record_count": {
+                "minimum": 0,
+                "title": "Record Count",
+                "type": "integer"
+              },
+              "missing_value_count": {
+                "minimum": 0,
+                "title": "Missing Value Count",
+                "type": "integer"
+              },
+              "status": {
+                "enum": [
+                  "ok",
+                  "no_data"
+                ],
+                "title": "Status",
+                "type": "string"
+              },
+              "caveats": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Caveats",
+                "type": "array"
+              }
+            },
+            "required": [
+              "dataset_id",
+              "source_url",
+              "retrieved_at",
+              "start",
+              "end",
+              "unit",
+              "resolution_minutes",
+              "record_count",
+              "missing_value_count",
+              "status",
+              "caveats"
+            ],
+            "title": "Metadata",
+            "type": "object"
+          }
+        },
+        "additionalProperties": false,
+        "title": "QualityResult"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "energy-belgium": {
+      "command": "energy-mcp-belgium",
+      "args": []
+    }
+  }
+}

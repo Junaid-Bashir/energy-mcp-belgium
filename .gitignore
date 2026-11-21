@@ -1,0 +1,74 @@
+# Python environments and generated files
+.venv/
+.clean-venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+
+# Private reports, raw client traces and local live-test output
+.local/
+.integration/
+live-test-output/
+inspector-output/
+artifacts/public-demo/
+*.jsonl
+*.log
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.codex/
+.mcp.local.json
+
+# Editors and operating-system files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Inspector / Node downloads (not part of the Python package)
+node_modules/
+.npm/
+.npm-cache/
+.inspector/
+
+# Python Workers local environments, downloaded modules and Cloudflare state
+.wrangler/
+.venv-workers/
+python_modules/
+.dev.vars
+.dev.vars.*
+pylock.toml
+
+# Local development instructions, audit evidence and transcripts
+.openai/
+.claude/
+.cursor/
+AGENTS.md
+AGENTS.override.md
+CLAUDE.md
+/prompts/
+/instructions/
+/audit-output/
+/transcripts/
+/screenshots/
+implementation-report.md
+acceptance-review.md
+client-integration.md
+release-preparation-report.md
+sanitization-report.md
+*.har
+*.session.json

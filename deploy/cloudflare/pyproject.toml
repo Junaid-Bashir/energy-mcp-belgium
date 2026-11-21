@@ -1,0 +1,8 @@
+[project]
+name = "energy-mcp-belgium-worker"
+version = "0.0.0"
+requires-python = ">=3.14,<3.15"
+dependencies = ["energy-mcp-belgium==0.1.0", "mcp==2.3.0"]
+
+[dependency-groups]
+dev = ["workers-py==1.17.9", "workers-runtime-sdk==1.9.6"]

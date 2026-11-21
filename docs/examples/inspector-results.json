@@ -1,0 +1,233 @@
+[
+  {
+    "case": "discovery",
+    "tools": 8,
+    "seconds": 2.312
+  },
+  {
+    "case": "get_solar_generation",
+    "tool": "get_solar_generation",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z"
+    },
+    "dataset": "ods209",
+    "records": 4,
+    "structured_bytes": 1054,
+    "mcp_result_bytes": 2827,
+    "seconds": 3.61
+  },
+  {
+    "case": "get_wind_generation",
+    "tool": "get_wind_generation",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z"
+    },
+    "dataset": "ods031",
+    "records": 4,
+    "structured_bytes": 945,
+    "mcp_result_bytes": 2549,
+    "seconds": 3.687
+  },
+  {
+    "case": "get_load",
+    "tool": "get_load",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z"
+    },
+    "dataset": "ods001",
+    "records": 4,
+    "structured_bytes": 882,
+    "mcp_result_bytes": 2331,
+    "seconds": 3.375
+  },
+  {
+    "case": "get_generation_mix",
+    "tool": "get_generation_mix",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z"
+    },
+    "dataset": "ods201",
+    "records": 48,
+    "structured_bytes": 8751,
+    "mcp_result_bytes": 23379,
+    "seconds": 3.281
+  },
+  {
+    "case": "get_system_imbalance",
+    "tool": "get_system_imbalance",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z"
+    },
+    "dataset": "ods126",
+    "records": 60,
+    "structured_bytes": 8096,
+    "mcp_result_bytes": 21303,
+    "seconds": 3.203
+  },
+  {
+    "case": "get_imbalance_prices",
+    "tool": "get_imbalance_prices",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z"
+    },
+    "dataset": "ods134",
+    "records": 4,
+    "structured_bytes": 1361,
+    "mcp_result_bytes": 3405,
+    "seconds": 3.125
+  },
+  {
+    "case": "wind_onshore",
+    "tool": "get_wind_generation",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z",
+      "wind_type": "onshore"
+    },
+    "dataset": "ods031",
+    "records": 4,
+    "structured_bytes": 965,
+    "mcp_result_bytes": 2589,
+    "seconds": 3.5
+  },
+  {
+    "case": "wind_offshore",
+    "tool": "get_wind_generation",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z",
+      "wind_type": "offshore"
+    },
+    "dataset": "ods031",
+    "records": 4,
+    "structured_bytes": 958,
+    "mcp_result_bytes": 2575,
+    "seconds": 2.953
+  },
+  {
+    "case": "calculate_energy",
+    "tool": "calculate_energy",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z",
+      "series": "solar"
+    },
+    "dataset": "ods209",
+    "records": 4,
+    "structured_bytes": 1222,
+    "mcp_result_bytes": 3014,
+    "seconds": 3.25
+  },
+  {
+    "case": "check_data_quality",
+    "tool": "check_data_quality",
+    "arguments": {
+      "start": "2026-11-17T10:00:00Z",
+      "end": "2026-11-17T11:00:00Z",
+      "series": "solar"
+    },
+    "dataset": "ods209",
+    "records": 4,
+    "structured_bytes": 665,
+    "mcp_result_bytes": 1648,
+    "seconds": 3.36
+  },
+  {
+    "case": "get_solar_generation_day",
+    "tool": "get_solar_generation",
+    "arguments": {
+      "start": "2026-11-17T00:00:00Z",
+      "end": "2026-11-18T00:00:00Z"
+    },
+    "dataset": "ods209",
+    "records": 96,
+    "structured_bytes": 15094,
+    "mcp_result_bytes": 41795,
+    "seconds": 2.89
+  },
+  {
+    "case": "get_wind_generation_day",
+    "tool": "get_wind_generation",
+    "arguments": {
+      "start": "2026-11-17T00:00:00Z",
+      "end": "2026-11-18T00:00:00Z"
+    },
+    "dataset": "ods031",
+    "records": 96,
+    "structured_bytes": 12958,
+    "mcp_result_bytes": 35965,
+    "seconds": 5.203
+  },
+  {
+    "case": "get_load_day",
+    "tool": "get_load",
+    "arguments": {
+      "start": "2026-11-17T00:00:00Z",
+      "end": "2026-11-18T00:00:00Z"
+    },
+    "dataset": "ods001",
+    "records": 96,
+    "structured_bytes": 11047,
+    "mcp_result_bytes": 29931,
+    "seconds": 3.079
+  },
+  {
+    "case": "get_generation_mix_day",
+    "tool": "get_generation_mix",
+    "arguments": {
+      "start": "2026-11-17T00:00:00Z",
+      "end": "2026-11-18T00:00:00Z"
+    },
+    "dataset": "ods201",
+    "records": 1152,
+    "structured_bytes": 199367,
+    "mcp_result_bytes": 534101,
+    "seconds": 11.484
+  },
+  {
+    "case": "get_imbalance_prices_day",
+    "tool": "get_imbalance_prices",
+    "arguments": {
+      "start": "2026-11-17T00:00:00Z",
+      "end": "2026-11-18T00:00:00Z"
+    },
+    "dataset": "ods134",
+    "records": 96,
+    "structured_bytes": 22433,
+    "mcp_result_bytes": 55445,
+    "seconds": 3.406
+  },
+  {
+    "case": "invalid_time",
+    "is_error": true,
+    "exit_code": 5,
+    "seconds": 2.297
+  },
+  {
+    "case": "reversed",
+    "is_error": true,
+    "exit_code": 5,
+    "seconds": 2.218
+  },
+  {
+    "case": "oversized",
+    "is_error": true,
+    "exit_code": 5,
+    "seconds": 2.282
+  },
+  {
+    "case": "no_data",
+    "is_error": false,
+    "records": 0,
+    "seconds": 3.343,
+    "dataset": "ods126",
+    "start": "2024-01-01T00:00:00Z",
+    "end": "2024-01-01T01:00:00Z"
+  }
+]
